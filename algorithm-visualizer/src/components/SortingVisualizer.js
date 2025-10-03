@@ -1,0 +1,735 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import styled, { css } from 'styled-components';
+import ProfessionalProgressBar from './shared/ProgressBar';
+// Animation library removed for lighter build
+
+const Container = styled.div`
+  padding: 2rem;
+  color: #E0E0E0;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 100vh;
+`;
+
+const Title = styled.h1`
+  text-align: center;
+  margin-bottom: 3rem;
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #FF8C42, #4DB6AC);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 3px;
+    background: linear-gradient(135deg, #FF8C42, #4DB6AC);
+    border-radius: 2px;
+  }
+`;
+
+const Controls = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ControlGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
+const Label = styled.label`
+  font-size: 0.9rem;
+  opacity: 0.8;
+`;
+
+const Select = styled.select`
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+  
+  option {
+    background: #2a2a3e;
+    color: white;
+  }
+`;
+
+const Input = styled.input`
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 14px;
+  backdrop-filter: blur(10px);
+  width: 100px;
+  text-align: center;
+  
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+`;
+
+const Button = styled.button`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  
+  ${props => props.$primary ? css`
+    background: linear-gradient(45deg, #667eea, #764ba2);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  ` : css`
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  `}
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
+const VisualizationArea = styled.div`
+  background: rgba(18, 18, 18, 0.6);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  margin-bottom: 3rem;
+  min-height: 450px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  overflow-x: auto;
+  border: 1px solid rgba(224, 224, 224, 0.1);
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, 
+      #FF8C42 0%, #4DB6AC 25%, #9B5DE5 50%, 
+      #FFD166 75%, #FF8C42 100%);
+    border-radius: 20px 20px 0 0;
+    background-size: 200% 100%;
+    animation: flowingGradient 4s ease infinite;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+    border: 1px solid rgba(224, 224, 224, 0.05);
+    border-radius: 15px;
+    pointer-events: none;
+  }
+`;
+
+const Bar = styled.div`
+  background: ${props => {
+    if (props.$comparing) return 'linear-gradient(135deg, #4DB6AC, #2E8B57)';
+    if (props.$swapping) return 'linear-gradient(135deg, #FF8C42, #FF5E62)';
+    if (props.$sorted) return 'linear-gradient(135deg, #FFD166, #FFE066)';
+    return 'linear-gradient(135deg, #9B5DE5, #F15BB5)';
+  }};
+  color: white;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  min-width: 35px;
+  position: relative;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: bottom center;
+  
+  ${props => props.$comparing && css`
+    animation: pulse 1.5s infinite;
+    transform: scale(1.05);
+    z-index: 10;
+  `}
+  
+  ${props => props.$swapping && css`
+    animation: bounce 0.8s ease-in-out;
+    transform: scale(1.1);
+    z-index: 20;
+    box-shadow: 0 8px 30px rgba(255, 140, 66, 0.6);
+  `}
+  
+  ${props => props.$sorted && css`
+    animation: sparkle 1s ease-in-out;
+    box-shadow: 0 8px 25px rgba(255, 209, 102, 0.5);
+  `}
+
+  &:hover {
+    transform: scale(1.08);
+    z-index: 5;
+    box-shadow: 0 8px 25px rgba(155, 93, 229, 0.4);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    border-radius: inherit;
+    opacity: 0.7;
+    z-index: -1;
+  }
+`;
+
+const BarValue = styled.div`
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  color: white;
+  opacity: 0.8;
+`;
+
+const InfoPanel = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 15px;
+  padding: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+`;
+
+const InfoCard = styled.div`
+  text-align: center;
+`;
+
+const InfoTitle = styled.h3`
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: #667eea;
+`;
+
+const InfoValue = styled.div`
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+`;
+
+const InfoDescription = styled.div`
+  font-size: 0.9rem;
+  opacity: 0.8;
+`;
+
+const algorithms = {
+  bubble: {
+    name: 'Bubble Sort',
+    timeComplexity: 'O(n²)',
+    spaceComplexity: 'O(1)',
+    description: 'Compares adjacent elements and swaps them if they are in wrong order'
+  },
+  selection: {
+    name: 'Selection Sort',
+    timeComplexity: 'O(n²)',
+    spaceComplexity: 'O(1)',
+    description: 'Finds minimum element and places it at the beginning'
+  },
+  insertion: {
+    name: 'Insertion Sort',
+    timeComplexity: 'O(n²)',
+    spaceComplexity: 'O(1)',
+    description: 'Builds sorted array one element at a time'
+  },
+  merge: {
+    name: 'Merge Sort',
+    timeComplexity: 'O(n log n)',
+    spaceComplexity: 'O(n)',
+    description: 'Divide and conquer algorithm that merges sorted subarrays'
+  },
+  quick: {
+    name: 'Quick Sort',
+    timeComplexity: 'O(n log n)',
+    spaceComplexity: 'O(log n)',
+    description: 'Partitions array around pivot and recursively sorts'
+  }
+};
+
+const SortingVisualizer = () => {
+  const [array, setArray] = useState([]);
+  const [algorithm, setAlgorithm] = useState('bubble');
+  const [isRunning, setIsRunning] = useState(false);
+  const [speed, setSpeed] = useState(100);
+  const [arraySize, setArraySize] = useState(20);
+  const [comparisons, setComparisons] = useState(0);
+  const [swaps, setSwaps] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [comparingIndices, setComparingIndices] = useState([]);
+  const [swappingIndices, setSwappingIndices] = useState([]);
+  const [sortedIndices, setSortedIndices] = useState([]);
+
+  const generateArray = useCallback(() => {
+    const newArray = Array.from({ length: arraySize }, () => 
+      Math.floor(Math.random() * 300) + 10
+    );
+    setArray(newArray);
+    setComparisons(0);
+    setSwaps(0);
+    setCurrentStep('Array generated');
+    setComparingIndices([]);
+    setSwappingIndices([]);
+    setSortedIndices([]);
+  }, [arraySize]);
+
+  useEffect(() => {
+    generateArray();
+  }, [generateArray]);
+
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  const bubbleSort = async (arr) => {
+    const n = arr.length;
+    let tempComparisons = 0;
+    let tempSwaps = 0;
+
+    for (let i = 0; i < n - 1; i++) {
+      for (let j = 0; j < n - i - 1; j++) {
+        setComparingIndices([j, j + 1]);
+        setCurrentStep(`Comparing ${arr[j]} and ${arr[j + 1]}`);
+        tempComparisons++;
+        setComparisons(tempComparisons);
+        
+        await sleep(speed);
+
+        if (arr[j] > arr[j + 1]) {
+          setSwappingIndices([j, j + 1]);
+          setCurrentStep(`Swapping ${arr[j]} and ${arr[j + 1]}`);
+          
+          [arr[j], arr[j + 1]] = [arr[j + 1], arr[j]];
+          setArray([...arr]);
+          tempSwaps++;
+          setSwaps(tempSwaps);
+          
+          await sleep(speed);
+          setSwappingIndices([]);
+        }
+      }
+      setSortedIndices(prev => [...prev, n - 1 - i]);
+    }
+    setSortedIndices(prev => [...prev, 0]);
+    setComparingIndices([]);
+    setCurrentStep('Sorting complete!');
+  };
+
+  const selectionSort = async (arr) => {
+    const n = arr.length;
+    let tempComparisons = 0;
+    let tempSwaps = 0;
+
+    for (let i = 0; i < n - 1; i++) {
+      let minIdx = i;
+      setCurrentStep(`Finding minimum from position ${i}`);
+      
+      for (let j = i + 1; j < n; j++) {
+        setComparingIndices([minIdx, j]);
+        tempComparisons++;
+        setComparisons(tempComparisons);
+        
+        await sleep(speed);
+        
+        if (arr[j] < arr[minIdx]) {
+          minIdx = j;
+          setCurrentStep(`New minimum found: ${arr[j]}`);
+        }
+      }
+      
+      if (minIdx !== i) {
+        setSwappingIndices([i, minIdx]);
+        setCurrentStep(`Swapping ${arr[i]} with ${arr[minIdx]}`);
+        
+        [arr[i], arr[minIdx]] = [arr[minIdx], arr[i]];
+        setArray([...arr]);
+        tempSwaps++;
+        setSwaps(tempSwaps);
+        
+        await sleep(speed);
+        setSwappingIndices([]);
+      }
+      setSortedIndices(prev => [...prev, i]);
+    }
+    setSortedIndices(prev => [...prev, n - 1]);
+    setComparingIndices([]);
+    setCurrentStep('Sorting complete!');
+  };
+
+  const insertionSort = async (arr) => {
+    const n = arr.length;
+    let tempComparisons = 0;
+    let tempSwaps = 0;
+
+    setSortedIndices([0]);
+    
+    for (let i = 1; i < n; i++) {
+      let key = arr[i];
+      let j = i - 1;
+      setCurrentStep(`Inserting ${key} into sorted portion`);
+      
+      while (j >= 0) {
+        setComparingIndices([j, i]);
+        tempComparisons++;
+        setComparisons(tempComparisons);
+        
+        await sleep(speed);
+        
+        if (arr[j] <= key) break;
+        
+        setSwappingIndices([j, j + 1]);
+        arr[j + 1] = arr[j];
+        setArray([...arr]);
+        tempSwaps++;
+        setSwaps(tempSwaps);
+        
+        await sleep(speed);
+        setSwappingIndices([]);
+        j--;
+      }
+      
+      arr[j + 1] = key;
+      setArray([...arr]);
+      setSortedIndices(prev => [...prev, i]);
+    }
+    
+    setComparingIndices([]);
+    setCurrentStep('Sorting complete!');
+  };
+
+  const mergeSort = async (arr, left = 0, right = arr.length - 1) => {
+    if (left >= right) return;
+    
+    const mid = Math.floor((left + right) / 2);
+    setCurrentStep(`Dividing array: [${left}...${mid}] and [${mid + 1}...${right}]`);
+    
+    await mergeSort(arr, left, mid);
+    await mergeSort(arr, mid + 1, right);
+    await merge(arr, left, mid, right);
+  };
+
+  const merge = async (arr, left, mid, right) => {
+    const leftArr = arr.slice(left, mid + 1);
+    const rightArr = arr.slice(mid + 1, right + 1);
+    
+    let i = 0, j = 0, k = left;
+    
+    while (i < leftArr.length && j < rightArr.length) {
+      setComparingIndices([left + i, mid + 1 + j]);
+      setCurrentStep(`Merging: comparing ${leftArr[i]} and ${rightArr[j]}`);
+      setComparisons(prev => prev + 1);
+      
+      await sleep(speed);
+      
+      if (leftArr[i] <= rightArr[j]) {
+        arr[k] = leftArr[i];
+        i++;
+      } else {
+        arr[k] = rightArr[j];
+        j++;
+      }
+      
+      setArray([...arr]);
+      setSwaps(prev => prev + 1);
+      k++;
+      
+      await sleep(speed);
+    }
+    
+    while (i < leftArr.length) {
+      arr[k] = leftArr[i];
+      setArray([...arr]);
+      i++;
+      k++;
+      await sleep(speed / 2);
+    }
+    
+    while (j < rightArr.length) {
+      arr[k] = rightArr[j];
+      setArray([...arr]);
+      j++;
+      k++;
+      await sleep(speed / 2);
+    }
+    
+    setComparingIndices([]);
+  };
+
+  const quickSort = async (arr, low = 0, high = arr.length - 1) => {
+    if (low < high) {
+      const pi = await partition(arr, low, high);
+      await quickSort(arr, low, pi - 1);
+      await quickSort(arr, pi + 1, high);
+    }
+  };
+
+  const partition = async (arr, low, high) => {
+    const pivot = arr[high];
+    setCurrentStep(`Partitioning with pivot: ${pivot}`);
+    let i = low - 1;
+    
+    for (let j = low; j < high; j++) {
+      setComparingIndices([j, high]);
+      setCurrentStep(`Comparing ${arr[j]} with pivot ${pivot}`);
+      setComparisons(prev => prev + 1);
+      
+      await sleep(speed);
+      
+      if (arr[j] < pivot) {
+        i++;
+        if (i !== j) {
+          setSwappingIndices([i, j]);
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+          setArray([...arr]);
+          setSwaps(prev => prev + 1);
+          
+          await sleep(speed);
+          setSwappingIndices([]);
+        }
+      }
+    }
+    
+    setSwappingIndices([i + 1, high]);
+    [arr[i + 1], arr[high]] = [arr[high], arr[i + 1]];
+    setArray([...arr]);
+    setSwaps(prev => prev + 1);
+    
+    await sleep(speed);
+    setSwappingIndices([]);
+    setComparingIndices([]);
+    
+    return i + 1;
+  };
+
+  const startSorting = async () => {
+    setIsRunning(true);
+    setComparisons(0);
+    setSwaps(0);
+    setSortedIndices([]);
+    
+    const arrCopy = [...array];
+    
+    try {
+      switch (algorithm) {
+        case 'bubble':
+          await bubbleSort(arrCopy);
+          break;
+        case 'selection':
+          await selectionSort(arrCopy);
+          break;
+        case 'insertion':
+          await insertionSort(arrCopy);
+          break;
+        case 'merge':
+          await mergeSort(arrCopy);
+          setSortedIndices(Array.from({ length: arrCopy.length }, (_, i) => i));
+          break;
+        case 'quick':
+          await quickSort(arrCopy);
+          setSortedIndices(Array.from({ length: arrCopy.length }, (_, i) => i));
+          break;
+        default:
+          break;
+      }
+    } catch (error) {
+      console.error('Sorting interrupted:', error);
+    }
+    
+    setIsRunning(false);
+  };
+
+  const resetArray = () => {
+    setIsRunning(false);
+    generateArray();
+  };
+
+  return (
+    <Container>
+      <Title>Sorting Algorithms Visualizer</Title>
+      
+      <Controls>
+        <ControlGroup>
+          <Label>Algorithm</Label>
+          <Select
+            value={algorithm}
+            onChange={(e) => setAlgorithm(e.target.value)}
+            disabled={isRunning}
+          >
+            {Object.entries(algorithms).map(([key, algo]) => (
+              <option key={key} value={key}>{algo.name}</option>
+            ))}
+          </Select>
+        </ControlGroup>
+        
+        <ControlGroup>
+          <Label>Array Size</Label>
+          <Input
+            type="number"
+            min="5"
+            max="100"
+            value={arraySize}
+            onChange={(e) => setArraySize(parseInt(e.target.value))}
+            disabled={isRunning}
+          />
+        </ControlGroup>
+        
+        <ControlGroup>
+          <Label>Speed (ms)</Label>
+          <Input
+            type="number"
+            min="10"
+            max="1000"
+            step="10"
+            value={speed}
+            onChange={(e) => setSpeed(parseInt(e.target.value))}
+            disabled={isRunning}
+          />
+        </ControlGroup>
+        
+        <Button $success onClick={generateArray} disabled={isRunning}>
+          Generate New Array
+        </Button>
+
+        <Button $primary onClick={startSorting} disabled={isRunning} data-sort-button>
+          {isRunning ? 'Sorting...' : 'Start Sorting'}
+        </Button>
+
+        <Button $warning onClick={resetArray} disabled={isRunning}>
+          Reset
+        </Button>
+      </Controls>
+      
+      <VisualizationArea>
+        {array.map((value, index) => (
+          <Bar
+            key={`${index}-${value}`}
+            style={{ height: `${value}px` }}
+            $comparing={comparingIndices.includes(index)}
+            $swapping={swappingIndices.includes(index)}
+            $sorted={sortedIndices.includes(index)}
+          >
+            <BarValue>{value}</BarValue>
+          </Bar>
+        ))}
+      </VisualizationArea>
+      
+      <InfoPanel>
+        <InfoCard>
+          <InfoTitle>Algorithm</InfoTitle>
+          <InfoValue>{algorithms[algorithm].name}</InfoValue>
+          <InfoDescription>{algorithms[algorithm].description}</InfoDescription>
+        </InfoCard>
+        
+          <InfoCard>
+            <InfoTitle>Time Complexity</InfoTitle>
+            <InfoValue>{algorithms[algorithm].timeComplexity}</InfoValue>
+            <InfoDescription>Worst case performance</InfoDescription>
+          </InfoCard>
+
+          <InfoCard>
+            <InfoTitle>Progress & Statistics</InfoTitle>
+            <div style={{ marginBottom: '1rem' }}>
+              <ProfessionalProgressBar 
+                progress={sortedIndices.length} 
+                maxValue={array.length}
+                label="Sorted Elements"
+                animated={isRunning}
+              />
+            </div>
+            <div style={{ marginBottom: '1rem' }}>
+              <ProfessionalProgressBar 
+                progress={comparisons} 
+                maxValue={Math.max(array.length * 2, 50)}
+                label="Comparisons"
+                showValue={true}
+              />
+            </div>
+            <div>
+              <ProfessionalProgressBar 
+                progress={swaps} 
+                maxValue={Math.max(array.length, 20)}
+                label="Swaps"
+                showValue={true}
+              />
+            </div>
+          </InfoCard>        <InfoCard>
+          <InfoTitle>Space Complexity</InfoTitle>
+          <InfoValue>{algorithms[algorithm].spaceComplexity}</InfoValue>
+          <InfoDescription>Additional memory used</InfoDescription>
+        </InfoCard>
+        
+        <InfoCard>
+          <InfoTitle>Comparisons</InfoTitle>
+          <InfoValue>{comparisons}</InfoValue>
+          <InfoDescription>Elements compared</InfoDescription>
+        </InfoCard>
+        
+        <InfoCard>
+          <InfoTitle>Swaps</InfoTitle>
+          <InfoValue>{swaps}</InfoValue>
+          <InfoDescription>Elements swapped</InfoDescription>
+        </InfoCard>
+        
+        <InfoCard>
+          <InfoTitle>Current Step</InfoTitle>
+          <InfoValue style={{ fontSize: '1rem' }}>{currentStep}</InfoValue>
+          <InfoDescription>What's happening now</InfoDescription>
+        </InfoCard>
+      </InfoPanel>
+    </Container>
+  );
+};
+
+export default SortingVisualizer;
