@@ -786,7 +786,7 @@ const SortingVisualizer = () => {
     let i = 0, j = 0, k = left;
     
     while (i < leftArr.length && j < rightArr.length) {
-      if (shouldStop || !mountedRef.current) throw new Error('Sorting stopped');
+      if (shouldStop || !mountedRef.current) return;
       
       setComparingIndices([left + i, mid + 1 + j]);
       setCurrentStep(`Merging: comparing ${leftArr[i]} and ${rightArr[j]}`);
@@ -847,7 +847,7 @@ const SortingVisualizer = () => {
     let i = low - 1;
     
     for (let j = low; j < high; j++) {
-      if (shouldStop || !mountedRef.current) throw new Error('Sorting stopped');
+      if (shouldStop || !mountedRef.current) return i + 1;
       
       setComparingIndices([j, high]);
       setCurrentStep(`Comparing ${arr[j]} with pivot ${pivot}`);
