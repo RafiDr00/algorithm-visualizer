@@ -1,32 +1,99 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-// Charts library removed for lighter build
+import styled, { keyframes } from 'styled-components';
+
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+`;
 
 const Container = styled.div`
   padding: 2rem;
   color: white;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 80%, rgba(77, 182, 172, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 209, 102, 0.08) 0%, transparent 50%);
+    z-index: -1;
+    pointer-events: none;
+  }
 `;
 
 const Title = styled.h1`
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  font-weight: 700;
+  margin-bottom: 3rem;
+  font-size: 3.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #FF8C42 0%, #4DB6AC 50%, #9B5DE5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: ${shimmer} 3s ease-in-out infinite alternate;
+  position: relative;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 20px rgba(155, 93, 229, 0.3);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    height: 4px;
+    background: linear-gradient(135deg, #FF8C42, #4DB6AC);
+    border-radius: 2px;
+    box-shadow: 0 2px 15px rgba(255, 140, 66, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 2.4rem;
+  }
 `;
 
 const Controls = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  padding: 2.5rem 2rem;
   margin-bottom: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+    border-radius: 20px;
+    z-index: -1;
+    opacity: 0.6;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+  }
 `;
 
 const ControlGroup = styled.div`

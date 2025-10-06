@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import styled, { css } from 'styled-components';
+import styled, { css, keyframes } from 'styled-components';
 import ProfessionalProgressBar from './shared/ProgressBar';
-// Animation library removed for lighter build
+
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+`;
 
 const Container = styled.div`
   padding: 2rem;
@@ -9,43 +13,88 @@ const Container = styled.div`
   max-width: 1200px;
   margin: 0 auto;
   min-height: 100vh;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 30% 80%, rgba(155, 93, 229, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 70% 20%, rgba(77, 182, 172, 0.08) 0%, transparent 50%);
+    z-index: -1;
+    pointer-events: none;
+  }
 `;
 
 const Title = styled.h1`
   text-align: center;
   margin-bottom: 3rem;
-  font-size: 2.8rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, #FF8C42, #4DB6AC);
+  font-size: 3.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #FF8C42 0%, #4DB6AC 50%, #9B5DE5 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  background-size: 200% 200%;
+  animation: ${shimmer} 3s ease-in-out infinite alternate;
   position: relative;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 20px rgba(155, 93, 229, 0.3);
   
   &::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -12px;
     left: 50%;
     transform: translateX(-50%);
-    width: 100px;
-    height: 3px;
+    width: 120px;
+    height: 4px;
     background: linear-gradient(135deg, #FF8C42, #4DB6AC);
     border-radius: 2px;
+    box-shadow: 0 2px 15px rgba(255, 140, 66, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 2.4rem;
   }
 `;
 
 const Controls = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  padding: 2.5rem 2rem;
   margin-bottom: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+    border-radius: 20px;
+    z-index: -1;
+    opacity: 0.6;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+  }
 `;
 
 const ControlGroup = styled.div`
@@ -61,211 +110,326 @@ const Label = styled.label`
 `;
 
 const Select = styled.select`
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0.85rem 1.2rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
   color: white;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
+  font-size: 15px;
+  font-weight: 500;
+  backdrop-filter: blur(14px);
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='white' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  padding-right: 3rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: rgba(255, 255, 255, 0.18);
+  }
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
   
   option {
     background: #2a2a3e;
     color: white;
+    padding: 0.5rem;
   }
 `;
 
 const Input = styled.input`
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0.85rem 1.2rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
   color: white;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
-  width: 100px;
+  font-size: 15px;
+  font-weight: 500;
+  backdrop-filter: blur(14px);
+  width: 120px;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   &::placeholder {
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 400;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: rgba(255, 255, 255, 0.18);
+  }
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
   }
 `;
 
 const Button = styled.button`
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.8rem;
   border: none;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 15px;
+  position: relative;
+  overflow: hidden;
   
   ${props => props.$primary ? css`
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
   ` : css`
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.12);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   `}
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px) scale(1.02);
+    ${props => props.$primary ? css`
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.45);
+      background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    ` : css`
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.18);
+    `}
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
   }
   
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
   }
 `;
 
 const VisualizationArea = styled.div`
-  background: rgba(18, 18, 18, 0.6);
-  backdrop-filter: blur(15px);
-  border-radius: 20px;
-  padding: 3rem 2rem;
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  padding: 3.5rem 2.5rem;
   margin-bottom: 3rem;
-  min-height: 450px;
+  min-height: 480px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 4px;
+  gap: 6px;
   overflow-x: auto;
-  border: 1px solid rgba(224, 224, 224, 0.1);
   box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.1),
-    0 8px 32px rgba(0, 0, 0, 0.3);
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
   position: relative;
   
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    height: 4px;
     background: linear-gradient(90deg, 
       #FF8C42 0%, #4DB6AC 25%, #9B5DE5 50%, 
       #FFD166 75%, #FF8C42 100%);
-    border-radius: 20px 20px 0 0;
-    background-size: 200% 100%;
-    animation: flowingGradient 4s ease infinite;
+    border-radius: 24px 24px 0 0;
+    background-size: 300% 100%;
+    animation: flowingGradient 6s ease infinite;
+    z-index: 1;
   }
   
   &::after {
     content: '';
     position: absolute;
-    top: 20px;
-    left: 20px;
-    right: 20px;
-    bottom: 20px;
-    border: 1px solid rgba(224, 224, 224, 0.05);
-    border-radius: 15px;
+    top: 24px;
+    left: 24px;
+    right: 24px;
+    bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
     pointer-events: none;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+    min-height: 360px;
+    gap: 3px;
   }
 `;
 
 const Bar = styled.div`
   background: ${props => {
-    if (props.$comparing) return 'linear-gradient(135deg, #4DB6AC, #2E8B57)';
-    if (props.$swapping) return 'linear-gradient(135deg, #FF8C42, #FF5E62)';
-    if (props.$sorted) return 'linear-gradient(135deg, #FFD166, #FFE066)';
-    return 'linear-gradient(135deg, #9B5DE5, #F15BB5)';
+    if (props.$comparing) return 'linear-gradient(135deg, #4DB6AC 0%, #26A69A 50%, #2E8B57 100%)';
+    if (props.$swapping) return 'linear-gradient(135deg, #FF8C42 0%, #FF7043 50%, #FF5E62 100%)';
+    if (props.$sorted) return 'linear-gradient(135deg, #FFD166 0%, #FFCC02 50%, #FFE066 100%)';
+    return 'linear-gradient(135deg, #9B5DE5 0%, #7C3AED 50%, #F15BB5 100%)';
   }};
   color: white;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  min-width: 35px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 10px 10px 0 0;
+  min-width: 38px;
   position: relative;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.35);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: bottom center;
+  will-change: transform, box-shadow;
   
-  ${props => props.$comparing && css`
-    animation: pulse 1.5s infinite;
-    transform: scale(1.05);
-    z-index: 10;
-  `}
-  
-  ${props => props.$swapping && css`
-    animation: bounce 0.8s ease-in-out;
-    transform: scale(1.1);
-    z-index: 20;
-    box-shadow: 0 8px 30px rgba(255, 140, 66, 0.6);
-  `}
-  
-  ${props => props.$sorted && css`
-    animation: sparkle 1s ease-in-out;
-    box-shadow: 0 8px 25px rgba(255, 209, 102, 0.5);
-  `}
-
-  &:hover {
-    transform: scale(1.08);
-    z-index: 5;
-    box-shadow: 0 8px 25px rgba(155, 93, 229, 0.4);
-  }
-
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: inherit;
-    border-radius: inherit;
-    opacity: 0.7;
-    z-index: -1;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    height: 20%;
+    background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.1) 100%);
+    border-radius: 8px 8px 0 0;
+    pointer-events: none;
+  }
+  
+  ${props => props.$comparing && css`
+    animation: pulse 1.2s infinite;
+    transform: scale(1.08) rotateX(5deg);
+    z-index: 10;
+    box-shadow: 0 12px 35px rgba(77, 182, 172, 0.5);
+  `}
+  
+  ${props => props.$swapping && css`
+    animation: bounce 0.6s ease-in-out;
+    transform: scale(1.12) rotateY(8deg);
+    z-index: 20;
+    box-shadow: 0 15px 40px rgba(255, 140, 66, 0.6);
+  `}
+  
+  ${props => props.$sorted && css`
+    animation: sparkle 0.8s ease-in-out;
+    box-shadow: 0 12px 30px rgba(255, 209, 102, 0.5);
+    transform: scale(1.05) rotateZ(2deg);
+  `}
+
+  &:hover {
+    transform: scale(1.12) translateY(-3px);
+    z-index: 5;
+    box-shadow: 0 15px 35px rgba(155, 93, 229, 0.5);
+  }
+  
+  @media (max-width: 768px) {
+    min-width: 28px;
+    font-size: 0.75rem;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 `;
 
 const BarValue = styled.div`
   position: absolute;
-  top: -25px;
+  top: -28px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: white;
-  opacity: 0.8;
+  opacity: 0.9;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 `;
 
 const InfoPanel = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 2.5rem;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2.5rem;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    gap: 1.5rem;
+    grid-template-columns: 1fr;
+  }
 `;
 
 const InfoCard = styled.div`
   text-align: center;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  &:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  }
 `;
 
 const InfoTitle = styled.h3`
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  margin-bottom: 1.2rem;
   color: #667eea;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 `;
 
 const InfoValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-bottom: 0.8rem;
+  background: linear-gradient(135deg, #FFD166, #FF8C42);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 `;
 
 const InfoDescription = styled.div`
-  font-size: 0.9rem;
-  opacity: 0.8;
+  font-size: 1rem;
+  opacity: 0.85;
+  line-height: 1.5;
 `;
 
 const algorithms = {

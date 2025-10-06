@@ -1,32 +1,99 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import styled from 'styled-components';
-// Animation library removed for lighter build
+import styled, { keyframes } from 'styled-components';
+
+const shimmer = keyframes`
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+`;
 
 const Container = styled.div`
   padding: 2rem;
   color: white;
   max-width: 1200px;
   margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 25% 75%, rgba(255, 140, 66, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 75% 25%, rgba(77, 182, 172, 0.08) 0%, transparent 50%);
+    z-index: -1;
+    pointer-events: none;
+  }
 `;
 
 const Title = styled.h1`
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-  font-weight: 700;
+  margin-bottom: 3rem;
+  font-size: 3.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #FF8C42 0%, #4DB6AC 50%, #9B5DE5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  background-size: 200% 200%;
+  animation: ${shimmer} 3s ease-in-out infinite alternate;
+  position: relative;
+  letter-spacing: -1px;
+  text-shadow: 0 4px 20px rgba(155, 93, 229, 0.3);
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px;
+    height: 4px;
+    background: linear-gradient(135deg, #FF8C42, #4DB6AC);
+    border-radius: 2px;
+    box-shadow: 0 2px 15px rgba(255, 140, 66, 0.4);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 2.4rem;
+  }
 `;
 
 const Controls = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 15px;
-  padding: 2rem;
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  padding: 2.5rem 2rem;
   margin-bottom: 2rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.5rem;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2),
+              inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    bottom: -1px;
+    background: linear-gradient(135deg, #667eea, #764ba2, #f093fb);
+    border-radius: 20px;
+    z-index: -1;
+    opacity: 0.6;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem 1rem;
+    gap: 1rem;
+  }
 `;
 
 const ControlGroup = styled.div`
@@ -42,101 +109,197 @@ const Label = styled.label`
 `;
 
 const Select = styled.select`
-  padding: 0.75rem 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 0.85rem 1.2rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
   color: white;
-  font-size: 14px;
-  backdrop-filter: blur(10px);
+  font-size: 15px;
+  font-weight: 500;
+  backdrop-filter: blur(14px);
   cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='white' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 12px;
+  padding-right: 3rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  &:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+    background: rgba(255, 255, 255, 0.18);
+  }
+  
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
   
   option {
     background: #2a2a3e;
     color: white;
+    padding: 0.5rem;
   }
 `;
 
 const Button = styled.button`
-  padding: 0.75rem 1.5rem;
+  padding: 0.85rem 1.8rem;
   border: none;
-  border-radius: 8px;
-  font-weight: 500;
+  border-radius: 12px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
-  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 15px;
+  position: relative;
+  overflow: hidden;
   
   ${props => props.$primary ? `
-    background: linear-gradient(45deg, #667eea, #764ba2);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s;
+    }
+    
+    &:hover::before {
+      left: 100%;
+    }
   ` : props.$danger ? `
-    background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
     color: white;
-    box-shadow: 0 4px 15px rgba(238, 90, 82, 0.3);
+    box-shadow: 0 6px 20px rgba(238, 90, 82, 0.35);
   ` : `
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.12);
     color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1.5px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   `}
   
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    transform: translateY(-2px) scale(1.02);
+    ${props => props.$primary ? `
+      box-shadow: 0 8px 30px rgba(102, 126, 234, 0.45);
+    ` : props.$danger ? `
+      box-shadow: 0 8px 30px rgba(238, 90, 82, 0.45);
+    ` : `
+      box-shadow: 0 6px 20px rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.18);
+    `}
+  }
+  
+  &:active {
+    transform: translateY(0) scale(0.98);
   }
   
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
     transform: none;
   }
 `;
 
 const GridContainer = styled.div`
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 15px;
-  padding: 2rem;
-  margin-bottom: 2rem;
+  background: rgba(18, 18, 18, 0.7);
+  backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  padding: 3rem 2rem;
+  margin-bottom: 3rem;
   overflow: auto;
   display: flex;
   justify-content: center;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      #FF8C42 0%, #4DB6AC 25%, #9B5DE5 50%, 
+      #FFD166 75%, #FF8C42 100%);
+    border-radius: 24px 24px 0 0;
+    background-size: 300% 100%;
+    animation: flowingGradient 6s ease infinite;
+    z-index: 1;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 2rem 1rem;
+  }
 `;
 
 const Grid = styled.div`
   display: grid;
-  grid-template-columns: repeat(${props => props.$cols}, 20px);
-  grid-template-rows: repeat(${props => props.$rows}, 20px);
-  gap: 1px;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 10px;
-  border-radius: 8px;
+  grid-template-columns: repeat(${props => props.$cols}, 22px);
+  grid-template-rows: repeat(${props => props.$rows}, 22px);
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(${props => props.$cols}, 18px);
+    grid-template-rows: repeat(${props => props.$rows}, 18px);
+    gap: 1px;
+    padding: 10px;
+  }
 `;
 
 const Cell = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   cursor: pointer;
   position: relative;
+  border-radius: 3px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  @media (max-width: 768px) {
+    width: 18px;
+    height: 18px;
+  }
   
   ${props => {
-    if (props.$isStart) return 'background: linear-gradient(45deg, #4ade80, #22c55e);';
-    if (props.$isEnd) return 'background: linear-gradient(45deg, #f87171, #ef4444);';
-    if (props.$isWall) return 'background: linear-gradient(45deg, #374151, #1f2937);';
-    if (props.$isPath) return 'background: linear-gradient(45deg, #fbbf24, #f59e0b);';
-    if (props.$isVisited) return 'background: linear-gradient(45deg, #8b5cf6, #7c3aed);';
-    if (props.$isExploring) return 'background: linear-gradient(45deg, #06b6d4, #0891b2);';
-    return 'background: rgba(255, 255, 255, 0.1);';
+    if (props.$isStart) return 'background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%); box-shadow: 0 4px 12px rgba(74, 222, 128, 0.4);';
+    if (props.$isEnd) return 'background: linear-gradient(135deg, #f87171 0%, #ef4444 100%); box-shadow: 0 4px 12px rgba(248, 113, 113, 0.4);';
+    if (props.$isWall) return 'background: linear-gradient(135deg, #374151 0%, #1f2937 100%); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);';
+    if (props.$isPath) return 'background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); box-shadow: 0 4px 12px rgba(251, 191, 36, 0.5); animation: pulse 1.5s infinite;';
+    if (props.$isVisited) return 'background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);';
+    if (props.$isExploring) return 'background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); box-shadow: 0 4px 12px rgba(6, 182, 212, 0.4); animation: pulse 1s infinite;';
+    return 'background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.2);';
   }}
   
   &:hover {
-    opacity: 0.8;
+    transform: scale(1.1);
+    box-shadow: 0 4px 15px rgba(255, 255, 255, 0.2);
   }
 `;
 
 const InfoPanel = styled.div`
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   border-radius: 15px;
   padding: 2rem;
   display: grid;
